@@ -37,7 +37,7 @@ export const Auth: React.FC = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
             <Hotel className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-800">The Stay Palms Hotel</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Stay Palms Texas</h1>
           <p className="text-gray-600 mt-2">Management System</p>
         </div>
 

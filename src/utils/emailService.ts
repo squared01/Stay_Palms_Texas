@@ -76,7 +76,7 @@ export const generateReminderEmail = (reservation: Reservation, customer: Custom
             <p>Thank you for choosing our hotel.</p>
             
             <div class="footer">
-              <p><strong>Stay Palms TX Management Team</strong></p>
+              <p><strong>Stay Palms Texas Management Team</strong></p>
               <p>316 1st St, Normangee, TX 77871</p>
               <p>Phone: (281) 520-8440</p>
             </div>
@@ -105,7 +105,7 @@ If you have any questions about this cancellation or need to make a new reservat
 Thank you for choosing our hotel.
 
 Best regards,
-Stay Palms TX Management Team
+Stay Palms Texas Management Team
 316 1st St, Normangee, TX 77871
 Phone: (281) 520-8440
     `.trim();
@@ -141,7 +141,7 @@ Phone: (281) 520-8440
         <div class="content">
           <p>Dear ${customer.firstName} ${customer.lastName},</p>
           
-          <p>This is a friendly reminder about your upcoming reservation at Stay Palms TX.</p>
+          <p>This is a friendly reminder about your upcoming reservation at Stay Palms Texas.</p>
           
           <div class="details">
             <h3>Reservation Details:</h3>
@@ -180,7 +180,7 @@ Phone: (281) 520-8440
           <p>We look forward to welcoming you soon! If you have any questions or special requests, please don't hesitate to contact us.</p>
           
           <div class="footer">
-            <p><strong>Stay Palms TX Management Team</strong></p>
+            <p><strong>Stay Palms Texas Management Team</strong></p>
             <p>316 1st St, Normangee, TX 77871</p>
             <p>Phone: (281) 520-8440</p>
           </div>
@@ -194,7 +194,7 @@ Reservation Reminder - ${customer.firstName} ${customer.lastName}
 
 Dear ${customer.firstName} ${customer.lastName},
 
-This is a friendly reminder about your upcoming reservation at Stay Palms TX.
+This is a friendly reminder about your upcoming reservation at Stay Palms Texas.
 
 Reservation Details:
 - Reservation Number: ${reservation.id}
@@ -212,7 +212,7 @@ Important Information:
 We look forward to welcoming you soon! If you have any questions or special requests, please don't hesitate to contact us.
 
 Best regards,
-Stay Palms TX Management Team
+Stay Palms Texas Management Team
 316 1st St, Normangee, TX 77871
 Phone: (281) 520-8440
   `.trim();

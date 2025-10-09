@@ -77,7 +77,7 @@ function App() {
   ]);
   const [hotelSettings, setHotelSettings] = useLocalStorage<HotelSettingsType>('hotel-settings', {
     totalRooms: 6,
-    hotelName: 'The Stay Palms Hotel',
+    hotelName: 'Stay Palms Texas',
     checkInTime: '15:00',
     checkOutTime: '11:00',
     rooms: [

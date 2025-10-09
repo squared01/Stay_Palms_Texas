@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
 
       // If the from email doesn't include a name, add one
       if (!fromEmail.includes('<')) {
-        fromEmail = `Stay Palms TX <${fromEmail}>`;
+        fromEmail = `Stay Palms Texas <${fromEmail}>`;
       }
     }
 
