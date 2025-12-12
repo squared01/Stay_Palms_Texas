@@ -151,9 +151,13 @@ export const useReservations = () => {
       const updateData: Partial<Omit<DatabaseReservation, 'id' | 'created_at'>> = {
         status,
       };
-      
-      if (status === 'cancelled' && comment) {
-        updateData.cancellation_comment = comment;
+
+      if (status === 'cancelled') {
+        if (comment) {
+          updateData.cancellation_comment = comment;
+        }
+        updateData.reminder_sent = false;
+        updateData.reminder_date = null;
       }
 
       const { data, error } = await supabase
