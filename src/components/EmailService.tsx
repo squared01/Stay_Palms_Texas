@@ -2,20 +2,22 @@ import React, { useState } from 'react';
 import { Reservation, Customer } from '../types';
 import { formatDate } from '../utils/reservationUtils';
 import { generateReminderEmail, generateConfirmationEmail } from '../utils/emailService';
-import { Mail, Clock, CheckCircle, AlertCircle, FileCheck } from 'lucide-react';
+import { Mail, Clock, CheckCircle, AlertCircle, FileCheck, X } from 'lucide-react';
 
 interface EmailServiceProps {
   reservations: Reservation[];
   customers: Customer[];
   onSendReminder: (reservationId: string) => Promise<void>;
   onSendConfirmation: (reservationId: string) => Promise<void>;
+  onDismissConfirmation: (reservationId: string) => Promise<void>;
 }
 
 export const EmailService: React.FC<EmailServiceProps> = ({
   reservations,
   customers,
   onSendReminder,
-  onSendConfirmation
+  onSendConfirmation,
+  onDismissConfirmation
 }) => {
   const [activeTab, setActiveTab] = useState<'confirmations' | 'reminders'>('confirmations');
 
@@ -44,6 +46,10 @@ export const EmailService: React.FC<EmailServiceProps> = ({
 
   const handleSendConfirmation = async (reservationId: string) => {
     await onSendConfirmation(reservationId);
+  };
+
+  const handleDismissConfirmation = async (reservationId: string) => {
+    await onDismissConfirmation(reservationId);
   };
 
   return (
@@ -151,13 +157,23 @@ export const EmailService: React.FC<EmailServiceProps> = ({
                           </p>
                         </div>
 
-                        <button
-                          onClick={() => handleSendConfirmation(reservation.id)}
-                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors flex items-center"
-                        >
-                          <Mail className="w-4 h-4 mr-2" />
-                          Send Confirmation
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleSendConfirmation(reservation.id)}
+                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors flex items-center"
+                          >
+                            <Mail className="w-4 h-4 mr-2" />
+                            Send Confirmation
+                          </button>
+                          <button
+                            onClick={() => handleDismissConfirmation(reservation.id)}
+                            className="px-4 py-2 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-semibold transition-colors flex items-center"
+                            title="Skip this confirmation email"
+                          >
+                            <X className="w-4 h-4 mr-2" />
+                            Dismiss
+                          </button>
+                        </div>
                       </div>
 
                       <details className="mt-3">

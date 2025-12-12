@@ -465,6 +465,31 @@ function App() {
     }
   };
 
+  const dismissConfirmation = async (reservationId: string) => {
+    const reservation = reservations.find(r => r.id === reservationId);
+    const customer = customers.find(c => c.id === reservation?.customerId);
+
+    if (reservation && customer) {
+      const confirmDismiss = window.confirm(
+        `Skip confirmation email for ${customer.firstName} ${customer.lastName}?\n\nThis will remove the reservation from the pending confirmations list without sending an email.`
+      );
+
+      if (confirmDismiss) {
+        try {
+          await updateReservationDb(reservationId, {
+            confirmationSent: true,
+            confirmationDate: new Date(),
+          });
+
+          alert(`Confirmation email skipped for ${customer.firstName} ${customer.lastName}`);
+        } catch (error) {
+          console.error('Error dismissing confirmation:', error);
+          alert('Failed to dismiss confirmation. Please try again.');
+        }
+      }
+    }
+  };
+
   const sendPriceChangeNotification = (roomType: RoomType, oldPrice: number, newPrice: number) => {
     if (notificationSettings.priceChangeNotifications.enabled && notificationSettings.priceChangeNotifications.emailAddresses.length > 0) {
       // In a real application, this would send actual emails
@@ -888,6 +913,7 @@ function App() {
             customers={customers}
             onSendReminder={sendReminder}
             onSendConfirmation={sendConfirmation}
+            onDismissConfirmation={dismissConfirmation}
           />
         )}
 
