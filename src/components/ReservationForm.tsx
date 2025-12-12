@@ -409,10 +409,15 @@ export const ReservationForm: React.FC<ReservationFormProps> = ({
               type="number"
               min="1"
               max="8"
-              value={formData.numberOfGuests}
+              value={formData.numberOfGuests || ''}
               onChange={(e) => {
-                const value = e.target.value === '' ? 1 : parseInt(e.target.value);
-                setFormData({ ...formData, numberOfGuests: value });
+                const value = e.target.value === '' ? '' : parseInt(e.target.value);
+                setFormData({ ...formData, numberOfGuests: value as number });
+              }}
+              onBlur={(e) => {
+                if (e.target.value === '' || parseInt(e.target.value) < 1) {
+                  setFormData({ ...formData, numberOfGuests: 1 });
+                }
               }}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
               required
