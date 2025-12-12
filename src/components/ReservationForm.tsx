@@ -282,18 +282,23 @@ export const ReservationForm: React.FC<ReservationFormProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Parse dates using UTC to avoid timezone conversion issues
     const [checkInYear, checkInMonth, checkInDay] = formData.checkInDate.split('-').map(Number);
     const [checkOutYear, checkOutMonth, checkOutDay] = formData.checkOutDate.split('-').map(Number);
-    
+
     const checkInDate = new Date(Date.UTC(checkInYear, checkInMonth - 1, checkInDay));
     const checkOutDate = new Date(Date.UTC(checkOutYear, checkOutMonth - 1, checkOutDay));
-    
+
     if (checkOutDate <= checkInDate) {
       alert('Check-out date must be after check-in date');
       return;
     }
+
+    // Ensure numberOfGuests is a valid number (at least 1)
+    const numberOfGuests = typeof formData.numberOfGuests === 'number' && formData.numberOfGuests > 0
+      ? formData.numberOfGuests
+      : 1;
 
     onSubmit({
       customerId: formData.customerId,
@@ -301,7 +306,7 @@ export const ReservationForm: React.FC<ReservationFormProps> = ({
       checkOutDate,
       roomType: formData.roomType,
       specificRoomId: formData.specificRoomId,
-      numberOfGuests: formData.numberOfGuests,
+      numberOfGuests,
       totalAmount: formData.totalAmount,
       status: 'confirmed',
       specialRequests: formData.specialRequests || undefined,
