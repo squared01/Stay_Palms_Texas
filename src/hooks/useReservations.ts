@@ -16,6 +16,8 @@ const transformReservation = (dbReservation: DatabaseReservation): Reservation =
   specialRequests: dbReservation.special_requests,
   reminderSent: dbReservation.reminder_sent,
   reminderDate: dbReservation.reminder_date ? new Date(dbReservation.reminder_date) : undefined,
+  confirmationSent: dbReservation.confirmation_sent,
+  confirmationDate: dbReservation.confirmation_date ? new Date(dbReservation.confirmation_date) : undefined,
   cancellationComment: dbReservation.cancellation_comment,
   createdAt: new Date(dbReservation.created_at),
 });
@@ -34,6 +36,8 @@ const transformToDbReservation = (reservation: Omit<Reservation, 'createdAt'>): 
   special_requests: reservation.specialRequests,
   reminder_sent: reservation.reminderSent,
   reminder_date: reservation.reminderDate?.toISOString(),
+  confirmation_sent: reservation.confirmationSent,
+  confirmation_date: reservation.confirmationDate?.toISOString(),
   cancellation_comment: reservation.cancellationComment,
 });
 
@@ -100,6 +104,8 @@ export const useReservations = () => {
       if (reservationData.specialRequests !== undefined) updateData.special_requests = reservationData.specialRequests;
       if (reservationData.reminderSent !== undefined) updateData.reminder_sent = reservationData.reminderSent;
       if (reservationData.reminderDate !== undefined) updateData.reminder_date = reservationData.reminderDate?.toISOString();
+      if (reservationData.confirmationSent !== undefined) updateData.confirmation_sent = reservationData.confirmationSent;
+      if (reservationData.confirmationDate !== undefined) updateData.confirmation_date = reservationData.confirmationDate?.toISOString();
       if (reservationData.cancellationComment !== undefined) updateData.cancellation_comment = reservationData.cancellationComment;
 
       const { data, error } = await supabase

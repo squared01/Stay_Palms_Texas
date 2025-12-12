@@ -34,7 +34,7 @@ import { HotelSettings } from './components/HotelSettings';
 import { HotelSettings as HotelSettingsType } from './types';
 import { useAutoCancellation } from './hooks/useAutoCancellation';
 import { ConnectionStatus } from './components/ProgressiveEnhancement';
-import { sendEmail, generateReminderEmail } from './utils/emailService';
+import { sendEmail, generateReminderEmail, generateConfirmationEmail } from './utils/emailService';
 import { useAuth } from './contexts/AuthContext';
 import { Auth } from './components/Auth';
 
@@ -119,7 +119,7 @@ function App() {
   const [showExistingReservationWarning, setShowExistingReservationWarning] = useState(false);
   const [customerForWarning, setCustomerForWarning] = useState<Customer | null>(null);
   const [openReservationsForWarning, setOpenReservationsForWarning] = useState<Reservation[]>([]);
-  const [pendingReservationData, setPendingReservationData] = useState<Omit<Reservation, 'id' | 'createdAt' | 'reminderSent'> | null>(null);
+  const [pendingReservationData, setPendingReservationData] = useState<Omit<Reservation, 'id' | 'createdAt' | 'reminderSent' | 'confirmationSent'> | null>(null);
   const [showOverbookingWarning, setShowOverbookingWarning] = useState(false);
   const [overbookedDates, setOverbookedDates] = useState<Date[]>([]);
   const [currentReservationFilter, setCurrentReservationFilter] = useState<{
@@ -183,7 +183,7 @@ function App() {
     onUpdateStatus: updateReservationStatus,
   });
 
-  const checkRoomAvailability = (newReservation: Omit<Reservation, 'id' | 'createdAt' | 'reminderSent'>): Date[] => {
+  const checkRoomAvailability = (newReservation: Omit<Reservation, 'id' | 'createdAt' | 'reminderSent' | 'confirmationSent'>): Date[] => {
     const overbookedDates: Date[] = [];
     const activeRooms = hotelSettings.rooms.filter(room => room.isActive);
     
@@ -293,14 +293,15 @@ function App() {
     setNewlyCreatedCustomer(null);
   };
 
-  const createReservation = async (reservationData: Omit<Reservation, 'id' | 'createdAt' | 'reminderSent'>) => {
+  const createReservation = async (reservationData: Omit<Reservation, 'id' | 'createdAt' | 'reminderSent' | 'confirmationSent'>) => {
     try {
       const newReservation: Omit<Reservation, 'createdAt'> = {
         ...reservationData,
         id: generateReservationId(),
         reminderSent: false,
+        confirmationSent: false,
       };
-      
+
       await createReservationDb(newReservation);
       setActiveTab('reservations');
       setSelectedCustomerForReservation(null);
@@ -310,14 +311,16 @@ function App() {
     }
   };
 
-  const updateReservation = async (reservationData: Omit<Reservation, 'id' | 'createdAt' | 'reminderSent'>) => {
+  const updateReservation = async (reservationData: Omit<Reservation, 'id' | 'createdAt' | 'reminderSent' | 'confirmationSent'>) => {
     if (!editingReservation) return;
-    
+
     try {
       await updateReservationDb(editingReservation.id, {
         ...reservationData,
         reminderSent: editingReservation.reminderSent,
         reminderDate: editingReservation.reminderDate,
+        confirmationSent: editingReservation.confirmationSent,
+        confirmationDate: editingReservation.confirmationDate,
       });
       setActiveTab('reservations');
       setEditingReservation(null);
@@ -327,7 +330,7 @@ function App() {
     }
   };
 
-  const handleCreateReservationAttempt = (reservationData: Omit<Reservation, 'id' | 'createdAt' | 'reminderSent'>) => {
+  const handleCreateReservationAttempt = (reservationData: Omit<Reservation, 'id' | 'createdAt' | 'reminderSent' | 'confirmationSent'>) => {
     // First check room availability
     const overbookedDates = checkRoomAvailability(reservationData);
     if (overbookedDates.length > 0) {
@@ -405,7 +408,7 @@ function App() {
   const sendReminder = async (reservationId: string) => {
     const reservation = reservations.find(r => r.id === reservationId);
     const customer = customers.find(c => c.id === reservation?.customerId);
-    
+
     if (reservation && customer) {
       try {
         // Generate email template
@@ -413,14 +416,14 @@ function App() {
 
         // Send email via Supabase Edge Function
         const result = await sendEmail(customer.email, emailTemplate, notificationSettings.fromEmail);
-        
+
         if (result.success) {
           // Update reservation status
           await updateReservationDb(reservationId, {
             reminderSent: true,
             reminderDate: new Date(),
           });
-          
+
           alert(`Email successfully sent to ${customer.firstName} ${customer.lastName} (${customer.email})`);
         } else {
           alert(`Failed to send email: ${result.error}`);
@@ -428,6 +431,36 @@ function App() {
       } catch (error) {
         console.error('Error sending reminder email:', error);
         alert('Failed to send email. Please check your internet connection and try again.');
+      }
+    }
+  };
+
+  const sendConfirmation = async (reservationId: string) => {
+    const reservation = reservations.find(r => r.id === reservationId);
+    const customer = customers.find(c => c.id === reservation?.customerId);
+
+    if (reservation && customer) {
+      try {
+        // Generate email template
+        const emailTemplate = generateConfirmationEmail(reservation, customer);
+
+        // Send email via Supabase Edge Function
+        const result = await sendEmail(customer.email, emailTemplate, notificationSettings.fromEmail);
+
+        if (result.success) {
+          // Update reservation status
+          await updateReservationDb(reservationId, {
+            confirmationSent: true,
+            confirmationDate: new Date(),
+          });
+
+          alert(`Confirmation email successfully sent to ${customer.firstName} ${customer.lastName} (${customer.email})`);
+        } else {
+          alert(`Failed to send confirmation email: ${result.error}`);
+        }
+      } catch (error) {
+        console.error('Error sending confirmation email:', error);
+        alert('Failed to send confirmation email. Please check your internet connection and try again.');
       }
     }
   };
@@ -473,6 +506,9 @@ function App() {
         setCurrentReservationFilter({ dateType: 'no-show-risk' });
         break;
       case 'email-reminders':
+        setActiveTab('email');
+        return; // Don't set reservation filter, just switch tabs
+      case 'email-confirmations':
         setActiveTab('email');
         return; // Don't set reservation filter, just switch tabs
       default:
@@ -851,6 +887,7 @@ function App() {
             reservations={reservations}
             customers={customers}
             onSendReminder={sendReminder}
+            onSendConfirmation={sendConfirmation}
           />
         )}
 

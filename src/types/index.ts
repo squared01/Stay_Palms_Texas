@@ -29,6 +29,8 @@ export interface Reservation {
   createdAt: Date;
   reminderSent: boolean;
   reminderDate?: Date;
+  confirmationSent: boolean;
+  confirmationDate?: Date;
   cancellationComment?: string;
 }
 

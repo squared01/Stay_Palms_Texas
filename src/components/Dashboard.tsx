@@ -1,16 +1,17 @@
 import React from 'react';
 import { Customer, Reservation } from '../types';
 import { formatCurrency } from '../utils/reservationUtils';
-import { 
-  Users, 
-  Calendar, 
-  DollarSign, 
-  TrendingUp, 
-  Clock, 
+import {
+  Users,
+  Calendar,
+  DollarSign,
+  TrendingUp,
+  Clock,
   CheckCircle,
   User,
   AlertTriangle,
-  LogOut
+  LogOut,
+  FileCheck
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -44,14 +45,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ customers, reservations, o
     })
     .reduce((sum, r) => sum + r.totalAmount, 0);
 
+  const pendingConfirmations = reservations.filter(r =>
+    r.status === 'confirmed' && !r.confirmationSent
+  ).length;
+
   const pendingReminders = reservations.filter(r => {
     if (r.status !== 'confirmed' || r.reminderSent) {
       return false;
     }
-    
+
     const checkInDate = new Date(r.checkInDate);
     const daysUntilCheckIn = Math.ceil((checkInDate.getTime() - todayUTC.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     // Include reservations needing reminders (within 3 days, including today)
     return daysUntilCheckIn <= 3 && daysUntilCheckIn >= 0;
   }).length;
@@ -95,6 +100,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ customers, reservations, o
       icon: LogOut,
       color: 'orange',
       filterKey: 'overdue',
+      clickable: true,
+    },
+    {
+      title: 'Pending Confirmations',
+      value: pendingConfirmations,
+      icon: FileCheck,
+      color: 'purple',
+      filterKey: 'email-confirmations',
       clickable: true,
     },
     {
@@ -146,6 +159,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ customers, reservations, o
       cyan: 'bg-cyan-500 text-cyan-100',
       red: 'bg-red-500 text-red-100',
       orange: 'bg-orange-500 text-orange-100',
+      purple: 'bg-purple-500 text-purple-100',
     };
     return colors[color as keyof typeof colors] || 'bg-gray-500 text-gray-100';
   };

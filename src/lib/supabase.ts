@@ -40,6 +40,8 @@ export interface DatabaseReservation {
   special_requests?: string;
   reminder_sent: boolean;
   reminder_date?: string;
+  confirmation_sent: boolean;
+  confirmation_date?: string;
   cancellation_comment?: string;
   created_at: string;
 }
