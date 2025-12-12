@@ -14,16 +14,18 @@ interface ReservationListProps {
   onUpdateStatus: (reservationId: string, status: Reservation['status'], comment?: string) => void;
   onEdit: (reservation: Reservation) => void;
   onSendReminder: (reservationId: string) => void;
+  onResendConfirmation: (reservationId: string) => void;
 }
 
-export const ReservationList: React.FC<ReservationListProps> = ({ 
-  reservations, 
-  customers, 
+export const ReservationList: React.FC<ReservationListProps> = ({
+  reservations,
+  customers,
   roomTypes,
   rooms,
   onUpdateStatus,
   onEdit,
-  onSendReminder
+  onSendReminder,
+  onResendConfirmation
 }) => {
   const [reservationToCancel, setReservationToCancel] = useState<Reservation | null>(null);
   const [cancellationComment, setCancellationComment] = useState('');
@@ -146,6 +148,18 @@ export const ReservationList: React.FC<ReservationListProps> = ({
           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(value)}`}>
             {value.replace('-', ' ').toUpperCase()}
           </span>
+          {row.confirmationSent && (
+            <div className="flex items-center px-2 py-1 bg-green-50 text-green-700 text-xs rounded-full" title={row.confirmationDate ? `Sent: ${formatDate(new Date(row.confirmationDate))}` : 'Confirmation sent'}>
+              <Mail className="w-3 h-3 mr-1" />
+              Confirmation Sent
+            </div>
+          )}
+          {row.reminderSent && (
+            <div className="flex items-center px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full" title={row.reminderDate ? `Sent: ${formatDate(new Date(row.reminderDate))}` : 'Reminder sent'}>
+              <Mail className="w-3 h-3 mr-1" />
+              Reminder Sent
+            </div>
+          )}
           {row.needsReminder && (
             <div className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
               Reminder Pending
@@ -172,7 +186,7 @@ export const ReservationList: React.FC<ReservationListProps> = ({
       header: 'Actions',
       sortable: false,
       render: (value: string, row: any) => (
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {row.status === 'confirmed' && (
             <button
               onClick={(e) => {
@@ -195,6 +209,19 @@ export const ReservationList: React.FC<ReservationListProps> = ({
               title="Check out guest"
             >
               Check Out
+            </button>
+          )}
+          {row.confirmationSent && (row.status === 'confirmed' || row.status === 'checked-in') && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onResendConfirmation(row.id);
+              }}
+              className="px-3 py-1 text-xs font-medium bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors flex items-center"
+              title={`Resend confirmation email${row.confirmationDate ? ` (Last sent: ${formatDate(new Date(row.confirmationDate))})` : ''}`}
+            >
+              <Mail className="w-3 h-3 mr-1" />
+              Resend
             </button>
           )}
           {(row.status === 'confirmed' || row.status === 'checked-in') && (

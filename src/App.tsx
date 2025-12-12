@@ -516,6 +516,71 @@ function App() {
     }
   };
 
+  const resendConfirmation = async (reservationId: string) => {
+    const reservation = reservations.find(r => r.id === reservationId);
+    const customer = customers.find(c => c.id === reservation?.customerId);
+
+    if (reservation && customer) {
+      const confirmResend = window.confirm(
+        `Resend confirmation email to ${customer.firstName} ${customer.lastName} (${customer.email})?`
+      );
+
+      if (confirmResend) {
+        try {
+          const emailTemplate = generateConfirmationEmail(reservation, customer);
+          const result = await sendEmail(customer.email, emailTemplate, notificationSettings.fromEmail);
+
+          if (result.success) {
+            await updateReservationDb(reservationId, {
+              confirmationSent: true,
+              confirmationDate: new Date(),
+            });
+
+            alert(`Confirmation email successfully resent to ${customer.firstName} ${customer.lastName} (${customer.email})`);
+          } else {
+            alert(`Failed to resend confirmation email: ${result.error}`);
+          }
+        } catch (error) {
+          console.error('Error resending confirmation email:', error);
+          alert('Failed to resend confirmation email. Please check your internet connection and try again.');
+        }
+      }
+    }
+  };
+
+  const resendReminder = async (reservationId: string) => {
+    const reservation = reservations.find(r => r.id === reservationId);
+    const customer = customers.find(c => c.id === reservation?.customerId);
+
+    if (reservation && customer) {
+      const messageType = reservation.status === 'cancelled' ? 'cancellation confirmation' : 'reminder';
+      const confirmResend = window.confirm(
+        `Resend ${messageType} email to ${customer.firstName} ${customer.lastName} (${customer.email})?`
+      );
+
+      if (confirmResend) {
+        try {
+          const emailTemplate = generateReminderEmail(reservation, customer);
+          const result = await sendEmail(customer.email, emailTemplate, notificationSettings.fromEmail);
+
+          if (result.success) {
+            await updateReservationDb(reservationId, {
+              reminderSent: true,
+              reminderDate: new Date(),
+            });
+
+            alert(`${messageType.charAt(0).toUpperCase() + messageType.slice(1)} email successfully resent to ${customer.firstName} ${customer.lastName} (${customer.email})`);
+          } else {
+            alert(`Failed to resend ${messageType} email: ${result.error}`);
+          }
+        } catch (error) {
+          console.error(`Error resending ${messageType} email:`, error);
+          alert(`Failed to resend ${messageType} email. Please check your internet connection and try again.`);
+        }
+      }
+    }
+  };
+
   const sendPriceChangeNotification = (roomType: RoomType, oldPrice: number, newPrice: number) => {
     if (notificationSettings.priceChangeNotifications.enabled && notificationSettings.priceChangeNotifications.emailAddresses.length > 0) {
       // In a real application, this would send actual emails
@@ -929,6 +994,7 @@ function App() {
               onUpdateStatus={updateReservationStatus}
               onEdit={setEditingReservation}
               onSendReminder={sendReminder}
+              onResendConfirmation={resendConfirmation}
             />
           </div>
         )}
@@ -941,6 +1007,8 @@ function App() {
             onSendConfirmation={sendConfirmation}
             onDismissConfirmation={dismissConfirmation}
             onDismissReminder={dismissReminder}
+            onResendConfirmation={resendConfirmation}
+            onResendReminder={resendReminder}
           />
         )}
 

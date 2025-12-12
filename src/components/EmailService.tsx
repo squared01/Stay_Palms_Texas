@@ -11,6 +11,8 @@ interface EmailServiceProps {
   onSendConfirmation: (reservationId: string) => Promise<void>;
   onDismissConfirmation: (reservationId: string) => Promise<void>;
   onDismissReminder: (reservationId: string) => Promise<void>;
+  onResendConfirmation: (reservationId: string) => Promise<void>;
+  onResendReminder: (reservationId: string) => Promise<void>;
 }
 
 export const EmailService: React.FC<EmailServiceProps> = ({
@@ -19,9 +21,11 @@ export const EmailService: React.FC<EmailServiceProps> = ({
   onSendReminder,
   onSendConfirmation,
   onDismissConfirmation,
-  onDismissReminder
+  onDismissReminder,
+  onResendConfirmation,
+  onResendReminder
 }) => {
-  const [activeTab, setActiveTab] = useState<'confirmations' | 'reminders'>('confirmations');
+  const [activeTab, setActiveTab] = useState<'confirmations' | 'reminders' | 'history'>('confirmations');
 
   const pendingConfirmations = reservations.filter(r =>
     r.status === 'confirmed' && !r.confirmationSent
@@ -37,6 +41,14 @@ export const EmailService: React.FC<EmailServiceProps> = ({
       (r.status === 'confirmed' && daysUntilCheckIn <= 3 && daysUntilCheckIn >= 0) ||
       r.status === 'cancelled'
     );
+  });
+
+  const sentEmails = reservations.filter(r =>
+    r.confirmationSent || r.reminderSent
+  ).sort((a, b) => {
+    const dateA = a.confirmationDate || a.reminderDate || a.createdAt;
+    const dateB = b.confirmationDate || b.reminderDate || b.createdAt;
+    return new Date(dateB).getTime() - new Date(dateA).getTime();
   });
 
   const getCustomer = (customerId: string) =>
@@ -131,6 +143,16 @@ export const EmailService: React.FC<EmailServiceProps> = ({
             }`}
           >
             Check-in Reminders ({pendingReminders.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`px-4 py-2 font-semibold transition-colors ${
+              activeTab === 'history'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Email History ({sentEmails.length})
           </button>
         </div>
       </div>
@@ -302,6 +324,127 @@ export const EmailService: React.FC<EmailServiceProps> = ({
             <div className="text-center py-8 text-gray-500">
               <Mail className="w-12 h-12 mx-auto mb-4 text-gray-300" />
               <p>No pending check-in reminders</p>
+            </div>
+          )}
+        </>
+      )}
+
+      {activeTab === 'history' && (
+        <>
+          {sentEmails.length > 0 ? (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                Sent Email History
+              </h3>
+
+              <div className="space-y-4">
+                {sentEmails.map(reservation => {
+                  const customer = getCustomer(reservation.customerId);
+                  if (!customer) return null;
+
+                  return (
+                    <div key={reservation.id} className="border border-blue-200 bg-blue-50 rounded-lg p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-800">
+                            {customer.firstName} {customer.lastName}
+                          </h4>
+                          <p className="text-sm text-gray-600">
+                            #{reservation.id} - Check-in: {formatDate(reservation.checkInDate)}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {reservation.roomType.charAt(0).toUpperCase() + reservation.roomType.slice(1)} - ${reservation.totalAmount.toFixed(2)}
+                          </p>
+
+                          <div className="mt-3 space-y-2">
+                            {reservation.confirmationSent && (
+                              <div className="flex items-center text-sm">
+                                <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
+                                <span className="text-gray-700">
+                                  <strong>Confirmation sent:</strong> {reservation.confirmationDate ? formatDate(reservation.confirmationDate) : 'Date unknown'}
+                                </span>
+                                {(reservation.status === 'confirmed' || reservation.status === 'checked-in') && (
+                                  <button
+                                    onClick={() => onResendConfirmation(reservation.id)}
+                                    className="ml-3 px-3 py-1 text-xs font-medium bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center"
+                                  >
+                                    <Mail className="w-3 h-3 mr-1" />
+                                    Resend Confirmation
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                            {reservation.reminderSent && (
+                              <div className="flex items-center text-sm">
+                                <CheckCircle className="w-4 h-4 text-blue-600 mr-2" />
+                                <span className="text-gray-700">
+                                  <strong>Reminder sent:</strong> {reservation.reminderDate ? formatDate(reservation.reminderDate) : 'Date unknown'}
+                                </span>
+                                {(reservation.status === 'confirmed' || reservation.status === 'checked-in' || reservation.status === 'cancelled') && (
+                                  <button
+                                    onClick={() => onResendReminder(reservation.id)}
+                                    className="ml-3 px-3 py-1 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center"
+                                  >
+                                    <Mail className="w-3 h-3 mr-1" />
+                                    Resend {reservation.status === 'cancelled' ? 'Cancellation' : 'Reminder'}
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="ml-4">
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            reservation.status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                            reservation.status === 'checked-in' ? 'bg-green-100 text-green-800' :
+                            reservation.status === 'checked-out' ? 'bg-gray-100 text-gray-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {reservation.status.replace('-', ' ').toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+
+                      <details className="mt-3">
+                        <summary className="text-sm text-gray-600 cursor-pointer hover:text-gray-800">
+                          View Email Content
+                        </summary>
+                        <div className="mt-2 space-y-3">
+                          {reservation.confirmationSent && (
+                            <div className="text-xs bg-white p-3 rounded border overflow-x-auto text-gray-700">
+                              <div className="mb-2">
+                                <strong>Confirmation Email Subject:</strong> {generateConfirmationEmail(reservation, customer).subject}
+                              </div>
+                              <div>
+                                <strong>Content:</strong>
+                                <pre className="mt-1 whitespace-pre-wrap">{generateConfirmationEmail(reservation, customer).text}</pre>
+                              </div>
+                            </div>
+                          )}
+                          {reservation.reminderSent && (
+                            <div className="text-xs bg-white p-3 rounded border overflow-x-auto text-gray-700">
+                              <div className="mb-2">
+                                <strong>Reminder Email Subject:</strong> {generateReminderEmail(reservation, customer).subject}
+                              </div>
+                              <div>
+                                <strong>Content:</strong>
+                                <pre className="mt-1 whitespace-pre-wrap">{generateReminderEmail(reservation, customer).text}</pre>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </details>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              <Mail className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p>No emails have been sent yet</p>
+              <p className="text-sm">Email history will appear here once you start sending confirmations and reminders</p>
             </div>
           )}
         </>
