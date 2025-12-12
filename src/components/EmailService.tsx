@@ -10,6 +10,7 @@ interface EmailServiceProps {
   onSendReminder: (reservationId: string) => Promise<void>;
   onSendConfirmation: (reservationId: string) => Promise<void>;
   onDismissConfirmation: (reservationId: string) => Promise<void>;
+  onDismissReminder: (reservationId: string) => Promise<void>;
 }
 
 export const EmailService: React.FC<EmailServiceProps> = ({
@@ -17,7 +18,8 @@ export const EmailService: React.FC<EmailServiceProps> = ({
   customers,
   onSendReminder,
   onSendConfirmation,
-  onDismissConfirmation
+  onDismissConfirmation,
+  onDismissReminder
 }) => {
   const [activeTab, setActiveTab] = useState<'confirmations' | 'reminders'>('confirmations');
 
@@ -50,6 +52,10 @@ export const EmailService: React.FC<EmailServiceProps> = ({
 
   const handleDismissConfirmation = async (reservationId: string) => {
     await onDismissConfirmation(reservationId);
+  };
+
+  const handleDismissReminder = async (reservationId: string) => {
+    await onDismissReminder(reservationId);
   };
 
   return (
@@ -250,17 +256,27 @@ export const EmailService: React.FC<EmailServiceProps> = ({
                           </p>
                         </div>
 
-                        <button
-                          onClick={() => handleSendReminder(reservation.id)}
-                          className={`px-4 py-2 text-white rounded-lg font-semibold transition-colors flex items-center ${
-                            reservation.status === 'cancelled'
-                              ? 'bg-red-600 hover:bg-red-700'
-                              : 'bg-orange-600 hover:bg-orange-700'
-                          }`}
-                        >
-                          <Mail className="w-4 h-4 mr-2" />
-                          {reservation.status === 'cancelled' ? 'Send Confirmation' : 'Send Reminder'}
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleSendReminder(reservation.id)}
+                            className={`px-4 py-2 text-white rounded-lg font-semibold transition-colors flex items-center ${
+                              reservation.status === 'cancelled'
+                                ? 'bg-red-600 hover:bg-red-700'
+                                : 'bg-orange-600 hover:bg-orange-700'
+                            }`}
+                          >
+                            <Mail className="w-4 h-4 mr-2" />
+                            {reservation.status === 'cancelled' ? 'Send Confirmation' : 'Send Reminder'}
+                          </button>
+                          <button
+                            onClick={() => handleDismissReminder(reservation.id)}
+                            className="px-4 py-2 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-semibold transition-colors flex items-center"
+                            title={reservation.status === 'cancelled' ? 'Skip this cancellation confirmation email' : 'Skip this reminder email'}
+                          >
+                            <X className="w-4 h-4 mr-2" />
+                            Dismiss
+                          </button>
+                        </div>
                       </div>
 
                       <details className="mt-3">
