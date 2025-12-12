@@ -410,7 +410,10 @@ export const ReservationForm: React.FC<ReservationFormProps> = ({
               min="1"
               max="8"
               value={formData.numberOfGuests}
-              onChange={(e) => setFormData({ ...formData, numberOfGuests: parseInt(e.target.value) || 1 })}
+              onChange={(e) => {
+                const value = e.target.value === '' ? 1 : parseInt(e.target.value);
+                setFormData({ ...formData, numberOfGuests: value });
+              }}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
               required
             />
