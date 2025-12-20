@@ -17,7 +17,6 @@ export const formatCurrency = (amount: number): string => {
 
 export const formatDate = (date: Date): string => {
   return new Intl.DateTimeFormat('en-US', {
-    timeZone: 'UTC',
     year: 'numeric',
     month: 'long',
     day: 'numeric',

@@ -27,10 +27,17 @@ export const ReservationForm: React.FC<ReservationFormProps> = ({
   selectedCustomerId,
   onCancel 
 }) => {
+  const formatDateForInput = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [formData, setFormData] = useState({
     customerId: initialData?.customerId || selectedCustomerId || '',
-    checkInDate: initialData && initialData.checkInDate instanceof Date ? initialData.checkInDate.toISOString().split('T')[0] : '',
-    checkOutDate: initialData && initialData.checkOutDate instanceof Date ? initialData.checkOutDate.toISOString().split('T')[0] : '',
+    checkInDate: initialData && initialData.checkInDate instanceof Date ? formatDateForInput(initialData.checkInDate) : '',
+    checkOutDate: initialData && initialData.checkOutDate instanceof Date ? formatDateForInput(initialData.checkOutDate) : '',
     roomType: initialData?.roomType || '',
     specificRoomId: initialData?.specificRoomId || '',
     numberOfGuests: initialData?.numberOfGuests || 1,
@@ -40,27 +47,27 @@ export const ReservationForm: React.FC<ReservationFormProps> = ({
   
   const [showAvailability, setShowAvailability] = useState(false);
 
-  // Helper function to create time-aware dates
+  // Helper function to create time-aware dates in local timezone
   const createTimeAwareDate = (dateInput: string | Date, timeString: string): Date => {
     let date: Date;
-    
+
     if (typeof dateInput === 'string') {
-      // Parse YYYY-MM-DD string as UTC date
+      // Parse YYYY-MM-DD string as local date
       const [year, month, day] = dateInput.split('-').map(Number);
-      date = new Date(Date.UTC(year, month - 1, day));
+      date = new Date(year, month - 1, day);
     } else {
-      // Use existing Date object, normalize to UTC midnight
-      date = new Date(Date.UTC(
-        dateInput.getUTCFullYear(),
-        dateInput.getUTCMonth(),
-        dateInput.getUTCDate()
-      ));
+      // Use existing Date object, normalize to local midnight
+      date = new Date(
+        dateInput.getFullYear(),
+        dateInput.getMonth(),
+        dateInput.getDate()
+      );
     }
-    
-    // Parse time string (HH:MM) and add to date
+
+    // Parse time string (HH:MM) and add to date in local timezone
     const [hours, minutes] = timeString.split(':').map(Number);
-    date.setUTCHours(hours, minutes, 0, 0);
-    
+    date.setHours(hours, minutes, 0, 0);
+
     return date;
   };
 
@@ -81,12 +88,12 @@ export const ReservationForm: React.FC<ReservationFormProps> = ({
     if (!formData.checkInDate || !formData.checkOutDate || !formData.roomType) {
       return [];
     }
-    
-    // Parse dates as UTC to avoid timezone issues
+
+    // Parse dates as local dates
     const [checkInYear, checkInMonth, checkInDay] = formData.checkInDate.split('-').map(Number);
     const [checkOutYear, checkOutMonth, checkOutDay] = formData.checkOutDate.split('-').map(Number);
-    const checkInDate = new Date(Date.UTC(checkInYear, checkInMonth - 1, checkInDay));
-    const checkOutDate = new Date(Date.UTC(checkOutYear, checkOutMonth - 1, checkOutDay));
+    const checkInDate = new Date(checkInYear, checkInMonth - 1, checkInDay);
+    const checkOutDate = new Date(checkOutYear, checkOutMonth - 1, checkOutDay);
     
     // Get all rooms of the selected type that are active
     const roomsOfType = rooms.filter(room => 
@@ -151,26 +158,26 @@ export const ReservationForm: React.FC<ReservationFormProps> = ({
       return null;
     }
 
-    // Parse dates as UTC to avoid timezone issues
+    // Parse dates as local dates
     const [checkInYear, checkInMonth, checkInDay] = formData.checkInDate.split('-').map(Number);
     const [checkOutYear, checkOutMonth, checkOutDay] = formData.checkOutDate.split('-').map(Number);
-    const checkInDate = new Date(Date.UTC(checkInYear, checkInMonth - 1, checkInDay));
-    const checkOutDate = new Date(Date.UTC(checkOutYear, checkOutMonth - 1, checkOutDay));
+    const checkInDate = new Date(checkInYear, checkInMonth - 1, checkInDay);
+    const checkOutDate = new Date(checkOutYear, checkOutMonth - 1, checkOutDay);
     const requestedDurationMs = checkOutDate.getTime() - checkInDate.getTime();
-    
+
     if (requestedDurationMs <= 0) return null;
 
-    const roomsOfType = rooms.filter(room => 
+    const roomsOfType = rooms.filter(room =>
       room.roomTypeId === formData.roomType && room.isActive
     );
-    
+
     if (roomsOfType.length === 0) return null;
-    
+
     // Start checking from today or the requested check-in date, whichever is later
     const today = new Date();
-    const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
-    
-    let searchDate = new Date(Math.max(todayUTC.getTime(), checkInDate.getTime() + 24 * 60 * 60 * 1000));
+    const todayLocal = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    let searchDate = new Date(Math.max(todayLocal.getTime(), checkInDate.getTime() + 24 * 60 * 60 * 1000));
 
     const maxSearchDays = 365;
     for (let i = 0; i < maxSearchDays; i++) {
@@ -291,12 +298,12 @@ export const ReservationForm: React.FC<ReservationFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Parse dates using UTC to avoid timezone conversion issues
+    // Parse dates as local dates at midnight
     const [checkInYear, checkInMonth, checkInDay] = formData.checkInDate.split('-').map(Number);
     const [checkOutYear, checkOutMonth, checkOutDay] = formData.checkOutDate.split('-').map(Number);
 
-    const checkInDate = new Date(Date.UTC(checkInYear, checkInMonth - 1, checkInDay));
-    const checkOutDate = new Date(Date.UTC(checkOutYear, checkOutMonth - 1, checkOutDay));
+    const checkInDate = new Date(checkInYear, checkInMonth - 1, checkInDay);
+    const checkOutDate = new Date(checkOutYear, checkOutMonth - 1, checkOutDay);
 
     if (checkOutDate <= checkInDate) {
       alert('Check-out date must be after check-in date');
@@ -323,10 +330,9 @@ export const ReservationForm: React.FC<ReservationFormProps> = ({
 
   const selectedCustomer = customers.find(c => c.id === formData.customerId);
 
-  // Helper function to format dates consistently
+  // Helper function to format dates consistently in local timezone
   const formatDate = (date: Date): string => {
     return date.toLocaleDateString('en-US', {
-      timeZone: 'UTC',
       year: 'numeric',
       month: 'long',
       day: 'numeric',
