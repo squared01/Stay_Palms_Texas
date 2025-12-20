@@ -11,9 +11,9 @@ export const useAutoCancellation = ({ reservations, onUpdateStatus }: UseAutoCan
     const checkForNoShows = () => {
       const now = new Date();
 
-      // Create today's date at midnight UTC for comparison
+      // Create today's date at midnight in local time for comparison
       const today = new Date();
-      today.setUTCHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
 
       // Create cutoff time (11:00 AM today) in local time
       const cutoffTime = new Date();
@@ -29,12 +29,12 @@ export const useAutoCancellation = ({ reservations, onUpdateStatus }: UseAutoCan
         const checkInDate = new Date(reservation.checkInDate);
         const checkOutDate = new Date(reservation.checkOutDate);
 
-        // Normalize dates to midnight UTC for comparison
+        // Normalize dates to midnight in local time for comparison
         const checkInDateOnly = new Date(checkInDate);
-        checkInDateOnly.setUTCHours(0, 0, 0, 0);
+        checkInDateOnly.setHours(0, 0, 0, 0);
 
         const checkOutDateOnly = new Date(checkOutDate);
-        checkOutDateOnly.setUTCHours(0, 0, 0, 0);
+        checkOutDateOnly.setHours(0, 0, 0, 0);
 
         // Only auto-cancel if:
         // 1. Check-in date is today AND it's past 11:00 AM AND guest hasn't checked in
@@ -54,10 +54,10 @@ export const useAutoCancellation = ({ reservations, onUpdateStatus }: UseAutoCan
         const checkOutDate = new Date(reservation.checkOutDate);
 
         const checkInDateOnly = new Date(checkInDate);
-        checkInDateOnly.setUTCHours(0, 0, 0, 0);
+        checkInDateOnly.setHours(0, 0, 0, 0);
 
         const checkOutDateOnly = new Date(checkOutDate);
-        checkOutDateOnly.setUTCHours(0, 0, 0, 0);
+        checkOutDateOnly.setHours(0, 0, 0, 0);
 
         const isCheckInToday = checkInDateOnly.getTime() === today.getTime();
         const isStayOverdue = checkOutDateOnly.getTime() < today.getTime();
@@ -66,7 +66,7 @@ export const useAutoCancellation = ({ reservations, onUpdateStatus }: UseAutoCan
         if (isStayOverdue) {
           cancellationComment = `Automatically cancelled - Guest did not check in by departure date (${checkOutDate.toLocaleDateString()})`;
         } else {
-          cancellationComment = `Automatically cancelled - Guest did not check in by 11:00 AM on ${today.toLocaleDateString()}`;
+          cancellationComment = `Automatically cancelled - Guest did not check in by 11:00 AM on ${checkInDate.toLocaleDateString()}`;
         }
 
         console.log(`Auto-cancelling no-show reservation: ${reservation.id}`);
