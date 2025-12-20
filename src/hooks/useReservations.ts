@@ -3,43 +3,61 @@ import { supabase, DatabaseReservation } from '../lib/supabase';
 import { Reservation } from '../types';
 
 // Transform database reservation to app reservation
-const transformReservation = (dbReservation: DatabaseReservation): Reservation => ({
-  id: dbReservation.id,
-  customerId: dbReservation.customer_id,
-  checkInDate: new Date(dbReservation.check_in_date + 'T00:00:00.000Z'),
-  checkOutDate: new Date(dbReservation.check_out_date + 'T00:00:00.000Z'),
-  roomType: dbReservation.room_type,
-  specificRoomId: dbReservation.specific_room_id,
-  numberOfGuests: dbReservation.number_of_guests,
-  totalAmount: dbReservation.total_amount,
-  status: dbReservation.status,
-  specialRequests: dbReservation.special_requests,
-  reminderSent: dbReservation.reminder_sent,
-  reminderDate: dbReservation.reminder_date ? new Date(dbReservation.reminder_date) : undefined,
-  confirmationSent: dbReservation.confirmation_sent,
-  confirmationDate: dbReservation.confirmation_date ? new Date(dbReservation.confirmation_date) : undefined,
-  cancellationComment: dbReservation.cancellation_comment,
-  createdAt: new Date(dbReservation.created_at),
-});
+const transformReservation = (dbReservation: DatabaseReservation): Reservation => {
+  // Parse date strings and create local dates at midnight
+  const parseLocalDate = (dateString: string): Date => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  return {
+    id: dbReservation.id,
+    customerId: dbReservation.customer_id,
+    checkInDate: parseLocalDate(dbReservation.check_in_date),
+    checkOutDate: parseLocalDate(dbReservation.check_out_date),
+    roomType: dbReservation.room_type,
+    specificRoomId: dbReservation.specific_room_id,
+    numberOfGuests: dbReservation.number_of_guests,
+    totalAmount: dbReservation.total_amount,
+    status: dbReservation.status,
+    specialRequests: dbReservation.special_requests,
+    reminderSent: dbReservation.reminder_sent,
+    reminderDate: dbReservation.reminder_date ? new Date(dbReservation.reminder_date) : undefined,
+    confirmationSent: dbReservation.confirmation_sent,
+    confirmationDate: dbReservation.confirmation_date ? new Date(dbReservation.confirmation_date) : undefined,
+    cancellationComment: dbReservation.cancellation_comment,
+    createdAt: new Date(dbReservation.created_at),
+  };
+};
 
 // Transform app reservation to database reservation
-const transformToDbReservation = (reservation: Omit<Reservation, 'createdAt'>): Omit<DatabaseReservation, 'created_at'> => ({
-  id: reservation.id,
-  customer_id: reservation.customerId,
-  check_in_date: reservation.checkInDate.toISOString().split('T')[0],
-  check_out_date: reservation.checkOutDate.toISOString().split('T')[0],
-  room_type: reservation.roomType,
-  specific_room_id: reservation.specificRoomId,
-  number_of_guests: reservation.numberOfGuests,
-  total_amount: reservation.totalAmount,
-  status: reservation.status,
-  special_requests: reservation.specialRequests,
-  reminder_sent: reservation.reminderSent,
-  reminder_date: reservation.reminderDate?.toISOString(),
-  confirmation_sent: reservation.confirmationSent,
-  confirmation_date: reservation.confirmationDate?.toISOString(),
-  cancellation_comment: reservation.cancellationComment,
-});
+const transformToDbReservation = (reservation: Omit<Reservation, 'createdAt'>): Omit<DatabaseReservation, 'created_at'> => {
+  // Format date as YYYY-MM-DD in local timezone
+  const formatLocalDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  return {
+    id: reservation.id,
+    customer_id: reservation.customerId,
+    check_in_date: formatLocalDate(reservation.checkInDate),
+    check_out_date: formatLocalDate(reservation.checkOutDate),
+    room_type: reservation.roomType,
+    specific_room_id: reservation.specificRoomId,
+    number_of_guests: reservation.numberOfGuests,
+    total_amount: reservation.totalAmount,
+    status: reservation.status,
+    special_requests: reservation.specialRequests,
+    reminder_sent: reservation.reminderSent,
+    reminder_date: reservation.reminderDate?.toISOString(),
+    confirmation_sent: reservation.confirmationSent,
+    confirmation_date: reservation.confirmationDate?.toISOString(),
+    cancellation_comment: reservation.cancellationComment,
+  };
+};
 
 export const useReservations = () => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -91,11 +109,18 @@ export const useReservations = () => {
   // Update an existing reservation
   const updateReservation = async (id: string, reservationData: Partial<Omit<Reservation, 'id' | 'createdAt'>>): Promise<Reservation> => {
     try {
+      const formatLocalDate = (date: Date): string => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
       const updateData: Partial<Omit<DatabaseReservation, 'id' | 'created_at'>> = {};
-      
+
       if (reservationData.customerId) updateData.customer_id = reservationData.customerId;
-      if (reservationData.checkInDate) updateData.check_in_date = reservationData.checkInDate.toISOString().split('T')[0];
-      if (reservationData.checkOutDate) updateData.check_out_date = reservationData.checkOutDate.toISOString().split('T')[0];
+      if (reservationData.checkInDate) updateData.check_in_date = formatLocalDate(reservationData.checkInDate);
+      if (reservationData.checkOutDate) updateData.check_out_date = formatLocalDate(reservationData.checkOutDate);
       if (reservationData.roomType) updateData.room_type = reservationData.roomType;
       if (reservationData.specificRoomId !== undefined) updateData.specific_room_id = reservationData.specificRoomId;
       if (reservationData.numberOfGuests) updateData.number_of_guests = reservationData.numberOfGuests;
