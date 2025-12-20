@@ -61,6 +61,7 @@ function App() {
     createReservation: createReservationDb,
     updateReservation: updateReservationDb,
     updateReservationStatus: updateReservationStatusDb,
+    refetch: refetchReservations,
   } = useReservations();
   
   // Create consistent UTC date for today at midnight
@@ -392,11 +393,14 @@ function App() {
     if (window.confirm(`Are you sure you want to delete ${customer.firstName} ${customer.lastName} and all their reservations?`)) {
       try {
         await deleteCustomerDb(customerId);
-        
+
+        // Refresh reservations list to remove deleted reservations
+        await refetchReservations();
+
         if (editingCustomer?.id === customerId) {
           setEditingCustomer(null);
         }
-        
+
         alert(`Customer ${customer.firstName} ${customer.lastName} has been successfully deleted.`);
       } catch (error) {
         console.error('Failed to delete customer:', error);

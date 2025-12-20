@@ -109,6 +109,15 @@ export const useCustomers = () => {
   // Delete a customer
   const deleteCustomer = async (id: string): Promise<void> => {
     try {
+      // First, delete all reservations for this customer
+      const { error: reservationError } = await supabase
+        .from('reservations')
+        .delete()
+        .eq('customer_id', id);
+
+      if (reservationError) throw reservationError;
+
+      // Then delete the customer
       const { error } = await supabase
         .from('customers')
         .delete()
