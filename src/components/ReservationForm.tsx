@@ -258,7 +258,15 @@ export const ReservationForm: React.FC<ReservationFormProps> = ({
 
   const fmtCurrency = (amount: number, currency = "USD", locale = "en-US") =>
     new Intl.NumberFormat(locale, { style: "currency", currency, maximumFractionDigits: 2 }).format(amount);
-  
+
+  const getTodayLocalDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   React.useEffect(() => {
     if (formData.checkInDate && formData.checkOutDate && formData.roomType) {
       setShowAvailability(true);
@@ -368,7 +376,7 @@ export const ReservationForm: React.FC<ReservationFormProps> = ({
               type="date"
               value={formData.checkInDate}
               onChange={(e) => setFormData({ ...formData, checkInDate: e.target.value })}
-              min={new Date().toISOString().split('T')[0]}
+              min={getTodayLocalDate()}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
               required
             />
@@ -382,7 +390,7 @@ export const ReservationForm: React.FC<ReservationFormProps> = ({
               type="date"
               value={formData.checkOutDate}
               onChange={(e) => setFormData({ ...formData, checkOutDate: e.target.value })}
-              min={formData.checkInDate || new Date().toISOString().split('T')[0]}
+              min={formData.checkInDate || getTodayLocalDate()}
               className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
               required
             />
